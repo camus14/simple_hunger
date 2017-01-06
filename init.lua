@@ -1,14 +1,14 @@
-local ftg = function(player, cost)
+local ftg = function(player, costo)
 	local inv = player:get_inventory()
-	local valor = inv:get_stack("hunger", 1):get_count()
-	inv:set_stack("hunger", 1, ItemStack({name=":", count=valor+cost}))
-	if inv:get_stack("hunger", 1):get_count() > 20 then
+	local valor = inv:get_stack("fatiga", 1):get_count()
+	inv:set_stack("fatiga", 1, ItemStack({name=":", count=valor+costo}))
+	if inv:get_stack("fatiga", 1):get_count() > 20 then
 		local czs = player:get_hp()
-		player:set_hp(czs-cost)
-		inv:set_stack("hunger", 1, ItemStack({name=":", count=20}))
+		player:set_hp(czs-costo)
+		inv:set_stack("fatiga", 1, ItemStack({name=":", count=20}))
 	else
 	end
-	player:hud_change(1, 5, 20 - inv:get_stack("hunger", 1):get_count())
+	player:hud_change(1, 5, 20 - inv:get_stack("fatiga", 1):get_count())
 end
 
 local comer = function(itemstack, player, mzn, crz)			
@@ -16,31 +16,38 @@ local comer = function(itemstack, player, mzn, crz)
 	local vida = player:get_hp()
 	player:set_hp(vida+crz)
 	local inv = player:get_inventory()
-	inv:set_stack("hunger", 1, ItemStack({name=":", count=inv:get_stack("hunger", 1):get_count()-mzn}))
-	if inv:get_stack("hunger", 1):get_count() >= 20 then
-		inv:set_stack("hunger", 1, ItemStack({name=":", count=0}))
+	inv:set_stack("fatiga", 1, ItemStack({name=":", count=inv:get_stack("fatiga", 1):get_count()-mzn}))
+	if inv:get_stack("fatiga", 1):get_count() >= 20 then
+		inv:set_stack("fatiga", 1, ItemStack({name=":", count=0}))
 	else
 	end
-	player:hud_change(1, 5, 20 - inv:get_stack("hunger", 1):get_count())
+	player:hud_change(1, 5, 20 - inv:get_stack("fatiga", 1):get_count())
 end
 
 minetest.register_on_joinplayer(function(player)
 	local name = player:get_player_name()
 	local inv = player:get_inventory()
-	inv:set_size("hunger",1)
-	if inv:get_stack("hunger", 1):get_count() == nil then
-		inv:set_stack("hunger", 1, ItemStack({name=":", count=0}))
+	inv:set_size("fatiga",1)
+	if inv:get_stack("fatiga", 1):get_count() == nil then
+		inv:set_stack("fatiga", 1, ItemStack({name=":", count=0}))
 	else
 	end
 	player:hud_add({
 		hud_elem_type = "statbar",
 		position = {x=0.5,y=1},
 		size = "",
-		text = "hunger_hud.png",
-		number = 20 - inv:get_stack("hunger", 1):get_count(),
+		text = "fatiga.png",
+		number = 20 - inv:get_stack("fatiga", 1):get_count(),
 		alignment = {x=0,y=1},
 		offset = {x=-265, y=-120},
 	})
+end)
+
+minetest.register_on_respawnplayer(function(player)
+	local name = player:get_player_name()
+	local inv = player:get_inventory()
+	inv:set_stack("fatiga", 1, ItemStack({name=":", count=0}))
+	player:hud_change(1, 5, 20 - inv:get_stack("fatiga", 1):get_count())
 end)
 
 minetest.register_on_dignode(function(pos, oldnode, digger)
@@ -49,21 +56,6 @@ end)
 
 minetest.register_on_placenode(function(pos, newnode, placer, oldnode, itemstack, pointed_thing)
 	ftg(placer, 1)
-end)
-
-minetest.register_on_respawnplayer(function(player)
-	local inv = player:get_inventory()
-	local valor = inv:get_stack("hunger", 1):get_count()
-	inv:set_stack("hunger", 1, ItemStack({name=":", count=0}))
-	player:hud_add({
-		hud_elem_type = "statbar",
-		position = {x=0.5,y=1},
-		size = "",
-		text = "fatiga.png",
-		number = 20,
-		alignment = {x=0,y=1},
-		offset = {x=-265, y=-120},
-	})
 end)
 
 minetest.override_item("default:apple", {
@@ -94,6 +86,7 @@ farming.hoe_on_use = function(itemstack, user, pointed_thing, uses)
 	local p = {x=pt.under.x, y=pt.under.y+1, z=pt.under.z}
 	local above = minetest.get_node(p)
 
+	-- return if any of the nodes is not registered
 	if not minetest.registered_nodes[under.name] then
 		return
 	end
@@ -101,14 +94,17 @@ farming.hoe_on_use = function(itemstack, user, pointed_thing, uses)
 		return
 	end
 
+	-- check if the node above the pointed thing is air
 	if above.name ~= "air" then
 		return
 	end
 
+	-- check if pointing at soil
 	if minetest.get_item_group(under.name, "soil") ~= 1 then
 		return
 	end
 
+	-- check if (wet) soil defined
 	local regN = minetest.registered_nodes
 	if regN[under.name].soil == nil or regN[under.name].soil.wet == nil or regN[under.name].soil.dry == nil then
 		return
@@ -123,6 +119,7 @@ farming.hoe_on_use = function(itemstack, user, pointed_thing, uses)
 		return
 	end
 
+	-- turn the node into soil, wear out item and play sound
 	minetest.set_node(pt.under, {name = regN[under.name].soil.dry})
 	minetest.sound_play("default_dig_crumbly", {
 		pos = pt.under,
@@ -142,6 +139,7 @@ farming.place_seed = function(itemstack, placer, pointed_thing, plantname)
 		minetest.get_node_timer(pos):start(math.random(166, 286))
 	end
 	local pt = pointed_thing
+	-- check if pointing at a node
 	if not pt then
 		return itemstack
 	end
@@ -161,6 +159,7 @@ farming.place_seed = function(itemstack, placer, pointed_thing, plantname)
 		return
 	end
 
+	-- return if any of the nodes is not registered
 	if not minetest.registered_nodes[under.name] then
 		return itemstack
 	end
@@ -168,18 +167,22 @@ farming.place_seed = function(itemstack, placer, pointed_thing, plantname)
 		return itemstack
 	end
 
+	-- check if pointing at the top of the node
 	if pt.above.y ~= pt.under.y+1 then
 		return itemstack
 	end
 
+	-- check if you can replace the node above the pointed node
 	if not minetest.registered_nodes[above.name].buildable_to then
 		return itemstack
 	end
 
+	-- check if pointing at soil
 	if minetest.get_item_group(under.name, "soil") < 2 then
 		return itemstack
 	end
 
+	-- add the node and remove 1 item from the itemstack
 	minetest.add_node(pt.above, {name = plantname, param2 = 1})
 	tick(pt.above)
 	if not minetest.setting_getbool("creative_mode") then
@@ -193,7 +196,7 @@ end
 
 function default.sapling_on_place(itemstack, placer, pointed_thing,
 		sapling_name, minp_relative, maxp_relative, interval)
-
+	-- Position of sapling
 	local pos = pointed_thing.under
 	local node = minetest.get_node(pos)
 	local pdef = minetest.registered_nodes[node.name]
@@ -207,10 +210,12 @@ function default.sapling_on_place(itemstack, placer, pointed_thing,
 	end
 
 	local player_name = placer:get_player_name()
+	-- Check sapling position for protection
 	if minetest.is_protected(pos, player_name) then
 		minetest.record_protection_violation(pos, player_name)
 		return itemstack
 	end
+	-- Check tree volume for protection
 	if not default.intersects_protection(
 			vector.add(pos, minp_relative),
 			vector.add(pos, maxp_relative),
@@ -222,6 +227,7 @@ function default.sapling_on_place(itemstack, placer, pointed_thing,
 		end
 	else
 		minetest.record_protection_violation(pos, player_name)
+		-- Print extra information to explain
 		minetest.chat_send_player(player_name, "Tree will intersect protection")
 	end
 
