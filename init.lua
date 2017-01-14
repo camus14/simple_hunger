@@ -36,7 +36,7 @@ minetest.register_on_joinplayer(function(player)
 		hud_elem_type = "statbar",
 		position = {x=0.5,y=1},
 		size = "",
-		text = "fatiga.png",
+		text = "hunger_hud.png",
 		number = 20 - inv:get_stack("fatiga", 1):get_count(),
 		alignment = {x=0,y=1},
 		offset = {x=-265, y=-120},
