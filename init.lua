@@ -95,7 +95,10 @@ end)
 
 minetest.register_on_placenode(function(pos, newnode, placer, oldnode, itemstack, pointed_thing)
 	ftg(placer, 1)
+<<<<<<< HEAD
 	golden_apple(placer)
+=======
+>>>>>>> 982682f37668fbdefef875a39c363b590de0e8ff
 end)
 
 minetest.override_item("default:apple", {
