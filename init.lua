@@ -37,16 +37,19 @@ local golden_apple = function(player)
 	end
 
 local ftg = function(player, costo)
-	local inv = player:get_inventory()
-	local valor = inv:get_stack("fatiga", 1):get_count()
-	inv:set_stack("fatiga", 1, ItemStack({name=":", count=valor+costo}))
-	if inv:get_stack("fatiga", 1):get_count() > 20 then
-		local czs = player:get_hp()
-		player:set_hp(czs-costo)
-		inv:set_stack("fatiga", 1, ItemStack({name=":", count=20}))
-	else
+	if not player:get_inventory() then
+	else	
+		local inv = player:get_inventory()
+		local valor = inv:get_stack("fatiga", 1):get_count()
+		inv:set_stack("fatiga", 1, ItemStack({name=":", count=valor+costo}))
+		if inv:get_stack("fatiga", 1):get_count() > 20 then
+			local czs = player:get_hp()
+			player:set_hp(czs-costo)
+			inv:set_stack("fatiga", 1, ItemStack({name=":", count=20}))
+		else
+		end
+		player:hud_change(1, 5, 20 - inv:get_stack("fatiga", 1):get_count())
 	end
-	player:hud_change(1, 5, 20 - inv:get_stack("fatiga", 1):get_count())
 end
 
 local comer = function(itemstack, player, mzn, crz)			
